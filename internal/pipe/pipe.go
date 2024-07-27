@@ -13,7 +13,8 @@ import (
 )
 
 type state struct {
-	v1, v2 any
+	v   any
+	err error
 }
 
 var states = make(map[uintptr]*state)
@@ -21,18 +22,35 @@ var states = make(map[uintptr]*state)
 // Pipe represents the term of the pipeline.
 type Pipe[T any] func(f func(T) T) Pipe[T]
 
+// PipeErr represents the term of the pipeline with error.
+type PipeErr[T any] func(f func(T) (T, error)) PipeErr[T]
+
 // Value returns a term.
 func Value[T any](v T) Pipe[T] {
-	s := &state{v1: v}
+	s := &state{v, nil}
 	var f Pipe[T]
 	f = func(g func(T) T) Pipe[T] {
-		v1 := s.v1.(T)
-		s.v1 = g(v1)
+		s.v = g(s.v.(T))
 		return f
 	}
 	addr := **(**uintptr)(unsafe.Pointer(&f))
 	states[addr] = s
 	// TODO: runtime.SetFinalizer
+	return f
+}
+
+// ValueErr returns a term.
+func ValueErr[T any](v T, err error) PipeErr[T] {
+	s := &state{v, err}
+	var f PipeErr[T]
+	f = func(g func(T) (T, error)) PipeErr[T] {
+		if s.err == nil {
+			s.v, s.err = g(s.v.(T))
+		}
+		return f
+	}
+	addr := **(**uintptr)(unsafe.Pointer(&f))
+	states[addr] = s
 	return f
 }
 
@@ -44,12 +62,32 @@ func (p Pipe[T]) Value() T {
 		panic("no state")
 	}
 	delete(states, addr)
-	return s.v1.(T)
+	return s.v.(T)
+}
+
+// Value returns the result of the pipeline.
+func (p PipeErr[T]) Value() (T, error) {
+	addr := **(**uintptr)(unsafe.Pointer(&p))
+	s := states[addr]
+	if s == nil {
+		panic("no state")
+	}
+	delete(states, addr)
+	return s.v.(T), s.err
 }
 
 func From[T1, T2 any](p Pipe[T1], f func(T1) T2) Pipe[T2] {
 	v := p.Value()
 	return Value(f(v))
+}
+
+func FromWithErr[T1, T2 any](p PipeErr[T1], f func(T1) (T2, error)) PipeErr[T2] {
+	v, err := p.Value()
+	if err != nil {
+		var zero T2
+		return ValueErr(zero, err)
+	}
+	return ValueErr(f(v))
 }
 
 /*

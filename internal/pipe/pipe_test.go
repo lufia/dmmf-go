@@ -1,6 +1,7 @@
 package pipe
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -24,11 +25,41 @@ func TestValue_1x1(t *testing.T) {
 	}
 }
 
+func TestValueErr_1x1(t *testing.T) {
+	v1 := ValueErr(10, nil)
+	v2 := ValueErr(20, nil)
+	r2, _ := v2.Value()
+	r1, _ := v1.Value()
+	if r1 != 10 {
+		t.Errorf("v1.Value() = %d; want 10", r1)
+	}
+	if r2 != 20 {
+		t.Errorf("v2.Value() = %d; want 20", r2)
+	}
+}
+
 func TestPipe(t *testing.T) {
 	plus3 := func(n int) int { return n + 3 }
 	times10 := func(n int) int { return n * 10 }
 	n := Value(10)(plus3)(times10).Value()
 	if n != 130 {
 		t.Errorf("Value() = %d; want 130", n)
+	}
+}
+
+func TestPipeErr(t *testing.T) {
+	add := func(s string) func(*strings.Builder) (*strings.Builder, error) {
+		return func(w *strings.Builder) (*strings.Builder, error) {
+			_, err := w.WriteString(s)
+			return w, err
+		}
+	}
+	p := ValueErr(&strings.Builder{}, nil)(add("hello"))(add("world"))
+	w, err := p.Value()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s := w.String(); s != "helloworld" {
+		t.Errorf("Value = %s; want helloworld", s)
 	}
 }
