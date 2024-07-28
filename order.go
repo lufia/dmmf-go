@@ -44,6 +44,8 @@ type PersonalName struct {
 	LastName  string
 }
 
+type EmailAddress string
+
 type ValidatedOrder struct {
 	OrderID         OrderID
 	CustomerInfo    *CustomerInfo

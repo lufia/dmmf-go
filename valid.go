@@ -4,8 +4,6 @@ import (
 	"github.com/lufia/go-validator"
 )
 
-type EmailAddress string
-
 func ParseEmailAddress(s string) (EmailAddress, error) {
 	return EmailAddress(s), nil
 }

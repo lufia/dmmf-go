@@ -43,14 +43,23 @@ func (Gizmo) privateProductCode() {}
 //   - [UnitQuantity]
 //   - [KilogramQuantity]
 type OrderQuantity interface {
+	Value() float64
 	privateOrderQuantity()
 }
 
 type UnitQuantity int
 
+func (q UnitQuantity) Value() float64 {
+	return float64(q)
+}
+
 func (UnitQuantity) privateOrderQuantity() {}
 
 type KilogramQuantity float64
+
+func (q KilogramQuantity) Value() float64 {
+	return float64(q)
+}
 
 func (KilogramQuantity) privateOrderQuantity() {}
 
