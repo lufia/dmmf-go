@@ -1,16 +1,14 @@
 // Package pipe provides utilities like pipe operator in the other language.
 //
-// # Warning
+// # CAUTION
 //
-// The [Value] function must be inlined because it uses a pointer to the function to keep a state each pipeline.
+// The [Value] and [ValueErr] must be inlined because the [Pipe] uses the pointer to the function to store a intermediate state.
 // See [Compiler Optimizations].
 //
 // [Compiler Optimizations]: https://go.dev/wiki/CompilerOptimizations
 package pipe
 
-import (
-	"unsafe"
-)
+import "unsafe"
 
 type state struct {
 	v   any
