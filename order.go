@@ -46,6 +46,10 @@ type PersonalName struct {
 
 type EmailAddress string
 
+func ParseEmailAddress(s string) (EmailAddress, error) {
+	return EmailAddress(s), nil
+}
+
 type ValidatedOrder struct {
 	OrderID         OrderID
 	CustomerInfo    *CustomerInfo
@@ -59,10 +63,6 @@ type ValidateOrderConfig struct {
 }
 
 var (
-	validateOrderID = validator.New(func(s string) bool {
-		_, err := ParseOrderID(s)
-		return err == nil
-	})
 	validateEmailAddress = validator.New(func(s string) bool {
 		_, err := ParseEmailAddress(s)
 		return err == nil
@@ -72,13 +72,9 @@ var (
 		validator.AddField(s, &r.LastName, "lastName", validateString50)
 		validator.AddField(s, &r.EmailAddress, "emailAddress", validateEmailAddress)
 	})
-	validateOrder = validator.Struct(func(s validator.StructRule, r *UnvalidatedOrder) {
-		validator.AddField(s, &r.OrderID, "orderID", validateOrderID)
-		validator.AddField(s, &r.CustomerInfo, "customerInfo", validateCustomerInfo)
-	})
 )
 
-func ValidateOrder(order *UnvalidatedOrder, config *ValidateOrderConfig) (*ValidatedOrder, error) {
+func (config *ValidateOrderConfig) ValidateOrder(order *UnvalidatedOrder) (*ValidatedOrder, error) {
 	orderID, err := ParseOrderID(order.OrderID)
 	if err != nil {
 		return nil, err

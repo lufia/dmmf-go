@@ -29,11 +29,15 @@ type PricedOrderLine struct {
 	LinePrice Price
 }
 
-func PriceOrder(order *ValidatedOrder, getProductPrice GetProductPrice) (*PricedOrder, error) {
+type PriceOrderConfig struct {
+	GetProductPrice GetProductPrice
+}
+
+func (config *PriceOrderConfig) PriceOrder(order *ValidatedOrder) (*PricedOrder, error) {
 	prices := make([]Price, len(order.Lines))
 	lines := make([]*PricedOrderLine, len(order.Lines))
 	for i, l := range order.Lines {
-		p, err := toPricedOrderLine(l, getProductPrice)
+		p, err := toPricedOrderLine(l, config.GetProductPrice)
 		if err != nil {
 			return nil, err
 		}

@@ -16,7 +16,7 @@ type AcknowledgeOrderConfig struct {
 	SendOrderAcknowledgment         SendOrderAcknowledgment
 }
 
-func AcknowledgeOrder(order *PricedOrder, config *AcknowledgeOrderConfig) (bool, error) {
+func (config *AcknowledgeOrderConfig) AcknowledgeOrder(order *PricedOrder) (bool, error) {
 	letter, err := config.CreateOrderAcknowledgmentLetter(order)
 	if err != nil {
 		return false, err
