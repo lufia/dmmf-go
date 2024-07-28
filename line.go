@@ -65,12 +65,20 @@ func toOrderQuantity(productCode ProductCode, quantity float64) (OrderQuantity, 
 	}
 }
 
+var ProductNotExist = errors.New("product does not exist")
+
+type CheckProductCodeExists func(s string) (ProductCode, error)
+
+func toProductCode(checkProductCodeExists CheckProductCodeExists, productCode string) (ProductCode, error) {
+	return checkProductCodeExists(productCode)
+}
+
 func toValidatedOrderLine(unvalidatedOrderLine *UnvalidatedOrderLine, checkProductCodeExists CheckProductCodeExists) (*ValidatedOrderLine, error) {
 	orderLineID, err := ParseOrderLineID(unvalidatedOrderLine.OrderLineID)
 	if err != nil {
 		return nil, err
 	}
-	productCode, err := checkProductCodeExists(unvalidatedOrderLine.ProductCode)
+	productCode, err := toProductCode(checkProductCodeExists, unvalidatedOrderLine.ProductCode)
 	if err != nil {
 		return nil, err
 	}
