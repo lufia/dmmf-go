@@ -25,11 +25,14 @@ func TestValue_1x1(t *testing.T) {
 	}
 }
 
-func TestValueErr_1x1(t *testing.T) {
-	v1 := ValueErr(10, nil)
-	v2 := ValueErr(20, nil)
-	r2, _ := v2.Value()
-	r1, _ := v1.Value()
+func TestPipeCatch_1x1(t *testing.T) {
+	f := func(n int) (int, error) {
+		return n, nil
+	}
+	v1 := Value(10)
+	v2 := Value(20)
+	r2 := v2.Catch(f).Value()
+	r1 := v1.Catch(f).Value()
 	if r1 != 10 {
 		t.Errorf("v1.Value() = %d; want 10", r1)
 	}
@@ -54,8 +57,8 @@ func TestPipeErr(t *testing.T) {
 			return w, err
 		}
 	}
-	p := ValueErr(&strings.Builder{}, nil)(add("hello"))(add("world"))
-	w, err := p.Value()
+	p := Value(&strings.Builder{}).Catch(add("hello")).Catch(add("world"))
+	w, err := p.ValueErr()
 	if err != nil {
 		t.Fatal(err)
 	}
