@@ -65,13 +65,15 @@ func (s *selection2[In, Out]) eval() *result {
 var states = make(map[uintptr]*state)
 
 // Pipe represents the term of the pipeline.
-type Pipe[T any] func(f func(T) T) Pipe[T]
+//
+// This object must never passed to other functions from the function it's created.
+type pipe[T any] func(f func(T) T) pipe[T]
 
 // Value returns a term.
-func Value[T any](v T) Pipe[T] {
+func Value[T any](v T) pipe[T] {
 	s := &state{&scalar[T]{v}}
-	var f Pipe[T]
-	f = func(g func(T) T) Pipe[T] {
+	var f pipe[T]
+	f = func(g func(T) T) pipe[T] {
 		n := s.next
 		s.next = &selection[T, T]{n, g}
 		return f
@@ -82,7 +84,7 @@ func Value[T any](v T) Pipe[T] {
 	return f
 }
 
-func (p Pipe[T]) Catch(f func(v T) (T, error)) Pipe[T] {
+func (p pipe[T]) Catch(f func(v T) (T, error)) pipe[T] {
 	addr := **(**uintptr)(unsafe.Pointer(&p))
 	s := states[addr]
 	n := s.next
@@ -90,12 +92,12 @@ func (p Pipe[T]) Catch(f func(v T) (T, error)) Pipe[T] {
 	return p
 }
 
-func (p Pipe[T]) Then(f func(T) T) Pipe[T] {
+func (p pipe[T]) Then(f func(T) T) pipe[T] {
 	return p(f)
 }
 
 // Value returns the result of the pipeline.
-func (p Pipe[T]) Value() T {
+func (p pipe[T]) Value() T {
 	v, err := p.ValueErr()
 	if err != nil {
 		panic(err)
@@ -104,7 +106,7 @@ func (p Pipe[T]) Value() T {
 }
 
 // ValueErr returns the result of the pipeline.
-func (p Pipe[T]) ValueErr() (T, error) {
+func (p pipe[T]) ValueErr() (T, error) {
 	addr := **(**uintptr)(unsafe.Pointer(&p))
 	s := states[addr]
 	if s == nil {
@@ -120,15 +122,15 @@ func (p Pipe[T]) ValueErr() (T, error) {
 	return r.v.(T), nil
 }
 
-func From[In, Out any](p Pipe[In], f func(In) (Out, error)) Pipe[Out] {
+func From[In, Out any](p pipe[In], f func(In) (Out, error)) pipe[Out] {
 	addr := **(**uintptr)(unsafe.Pointer(&p))
 	s := states[addr]
 	delete(states, addr)
 	n := s.next
 	s.next = &selection2[In, Out]{n, f}
 
-	var p2 Pipe[Out]
-	p2 = func(g func(Out) Out) Pipe[Out] {
+	var p2 pipe[Out]
+	p2 = func(g func(Out) Out) pipe[Out] {
 		n := s.next
 		s.next = &selection[Out, Out]{n, g}
 		return p2
@@ -145,7 +147,7 @@ func Errorable[T1, T2 any](f func(T1) T2) func(T1) (T2, error) {
 }
 
 /*
-If Go supports the type parameter on method, we will add Pipe.To method.
+If Go supports the type parameter on method, we will add pipe.To method.
 
   pipe.Value(auth()).To(tokenFrom).To(fetch)
 */
