@@ -41,6 +41,20 @@ func TestPipeCatch_1x1(t *testing.T) {
 	}
 }
 
+func TestPipeFrom(t *testing.T) {
+	f := func(n int) (float64, error) {
+		return float64(n), nil
+	}
+	v1 := From(Value(10), f)
+	v2 := From(Value(20), f)
+	if r1 := v1.Value(); r1 != 10 {
+		t.Errorf("v1.Value() = %g; want 10", r1)
+	}
+	if r2 := v2.Value(); r2 != 20 {
+		t.Errorf("v2.Value() = %g; want 20", r2)
+	}
+}
+
 func TestPipe(t *testing.T) {
 	plus3 := func(n int) int { return n + 3 }
 	times10 := func(n int) int { return n * 10 }
